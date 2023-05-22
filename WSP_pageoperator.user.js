@@ -5,8 +5,8 @@
 // @description  Improving the usability of the WSP interface operator's page
 // @author       Pavel P.
 // @license      Unlicense
-// @updateURL    https://test.user.js
-// @downloadURL  https://test.user.js
+// @updateURL    https://raw.githubusercontent.com/pertsevpy/WSP/main/WSP_pageoperator.user.js
+// @downloadURL  https://raw.githubusercontent.com/pertsevpy/WSP/main/WSP_pageoperator.user.js
 // @match        http://127.0.0.1:8000/pageoperator
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=1.100
 // @grant        none
