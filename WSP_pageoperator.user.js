@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         WSP_pageoperator
-// @namespace    
+// @namespace    https://github.com/pertsevpy/WSP/
 // @version      0.1
 // @description  Improving the usability of the WSP interface operator's page
 // @author       Pavel P.
