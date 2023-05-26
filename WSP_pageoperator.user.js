@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WSP_pageoperator
 // @namespace    https://github.com/pertsevpy/WSP/
-// @version      0.2.1
+// @version      0.2.2
 // @description  Improving the usability of the WSP interface operator's page
 // @author       Pavel P.
 // @license      Unlicense
@@ -32,7 +32,17 @@
    For more information, please refer to <http://unlicense.org/>
 */
 
+const IS_RIGHT_CLICK_ON = false;
+
 console.log('Proton script start');
+
+function mainPageMod() {
+    // hide test events - touch to two checkbox
+    const touch = document.getElementsByName('testMessageFilter');
+    touch.forEach(button => {
+        button.click();
+    });
+}
 
 function delTopAligh() {
     // removing the alignment in the header of the card, which spoils everything
@@ -130,10 +140,12 @@ if (window.location.href.includes('pageoperator')) {
 
 document.body.oncontextmenu = function (e) {
     // disable the right-click context menu
-    if (window.location.href.includes('pageoperator')) {
-        console.log('right click block: ');
-        //console.log(e);
-        return false;
+    if (!IS_RIGHT_CLICK_ON) {
+        if (window.location.href.includes('pageoperator')) {
+            console.log('right click block: ');
+            //console.log(e);
+            return false;
+        }
     }
 };
 
@@ -159,7 +171,9 @@ document.onclick = function(e) {
     addAdressToCard();
 };
 
+
 window.addEventListener('load', delTopAligh(), false);
 window.addEventListener('load', addIDtoTile(), false);
 window.addEventListener('load', editObjCard(), false);
+window.addEventListener('load', mainPageMod(), false);
 setInterval(() => permanentUpdate(), 500);
