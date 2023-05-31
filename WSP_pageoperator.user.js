@@ -32,7 +32,7 @@
    For more information, please refer to <http://unlicense.org/>
 */
 
-const IS_RIGHT_CLICK_ON = true;
+const IS_RIGHT_CLICK_ON = false;
 
 console.log('Proton script start');
 
