@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WSP_pageoperator
 // @namespace    https://github.com/pertsevpy/WSP/
-// @version      0.2.2
+// @version      0.2.3
 // @description  Improving the usability of the WSP interface operator's page
 // @author       Pavel P.
 // @license      Unlicense
@@ -32,7 +32,7 @@
    For more information, please refer to <http://unlicense.org/>
 */
 
-const IS_RIGHT_CLICK_ON = false;
+const IS_RIGHT_CLICK_ON = true;
 
 console.log('Proton script start');
 
@@ -42,26 +42,106 @@ function mainPageMod() {
     touch.forEach(button => {
         button.click();
     });
+
+    // further we will need id and names
+    addInfoToTile();
+
+    // add filter button
+    const targetText = 'Все объекты';
+    const h5Elements = document.getElementsByTagName('h5');
+
+    const input = document.createElement('input');
+    for (let i = 0; i < h5Elements.length; i++) {
+        const h5Element = h5Elements[i];
+
+        if (h5Element.textContent === targetText) {
+            input.setAttribute('class','form-control');
+            h5Element.parentNode.insertBefore(input, h5Element.nextSibling);
+            input.style.width = '200pt';
+            input.style.display = 'inline';
+            input.id = 'filterInput';
+            break;
+        }
+    }
+
+    var header = document.querySelector('header');
+    input.type = 'text';
+    input.placeholder = 'Фильтр по названию';
+
+    // add filter
+    let timeoutId;
+
+    input.addEventListener('keyup', function() {
+        clearTimeout(timeoutId);
+        var filterValue = this.value.toLowerCase();
+        var products = document.getElementsByClassName('ProductTile');
+
+        for (let i=0; i<products.length; i++) {
+
+            if (products[i].firstElementChild.getAttribute('title') === null || products[i].firstElementChild.getAttribute('title') == '') {
+                products[i].firstElementChild.setAttribute('title', 'Noname');
+            }
+            // obj title + obj num
+            const title = products[i].firstElementChild.getAttribute('title').toLowerCase() + ' ' + products[i].id.toString();
+
+            if (title.includes(filterValue)) {
+                products[i].style.display = 'block';
+            } else {
+                products[i].style.display = 'none';
+            }
+        }
+        // auto clear filter
+        timeoutId = setTimeout(function() {
+            input.value = '';
+            const event = new Event('keyup');
+            input.dispatchEvent(event);
+        }, 60000);
+    })
 }
 
-function delTopAligh() {
-    // removing the alignment in the header of the card, which spoils everything
-    // or for class 'col-lg-12 col-md-12 col-sm-12 col-xs-12 col-md-offset-4'
-    // del 'col-md-offset-4'
-    let headingElement = document.querySelector('.col-md-offset-4');
-    headingElement.style.marginLeft = '10pt';
+function addObjNamesToTile() {
+    const url = 'http://127.0.0.1:8000/api/managerobject/';
+
+    fetch(url)
+        .then(response => response.json())
+        .then(function(data) {
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    if (typeof data[key] === 'object') {
+                        let obInfo = data[key];
+                        let obTile = document.
+                            getElementById(String(obInfo.object_addr))
+                        if (obTile !== null) {
+                            obTile.childNodes[0].title = String(obInfo.nameobj);
+                        }
+                    } else {
+                        console.error(key + ': ' + data[key]);
+                    }
+                }
+            }
+        })
+        .catch(error => console.error(error));
 }
 
-function addIDtoTile() {
+function addInfoToTile() {
     // required for normal navigation in other func
     // if it breaks again, move it to document.onclick
-    let spans = document.getElementsByClassName('ProductTile');
-
-    for (let i=0; i<spans.length; i++) {
-        spans[i].id = String(spans[i].textContent);
-        //console.log(spans[i].textContent);
-    }
-    addObjNamesToTile();
+    const interval = setInterval(() => {
+        if (document.getElementsByClassName('ProductTile')) {
+            clearInterval(interval);
+            let spans = document.getElementsByClassName('ProductTile');
+            if (spans.length == 0) {
+                setTimeout(function() {
+                    ;
+                }, 2000);
+            }
+            // add id to Tiles
+            for (let i=0; i<spans.length; i++) {
+                spans[i].id = String(spans[i].textContent);
+            }
+            addObjNamesToTile(); // after assigning an id
+        }
+    }, 500);
 }
 
 function addAdressToCard() {
@@ -94,6 +174,12 @@ function permanentUpdate() {
 }
 
 function editObjCard() {
+    // removing the alignment in the header of the card, which spoils everything
+    // or for class 'col-lg-12 col-md-12 col-sm-12 col-xs-12 col-md-offset-4'
+    // del 'col-md-offset-4'
+    let headingElement = document.querySelector('.col-md-offset-4');
+    headingElement.style.marginLeft = '10pt';
+
     // increasing the information content of the object card
     let h5addr = document.createElement('h5');
     h5addr.id = 'headAdress';
@@ -102,30 +188,6 @@ function editObjCard() {
         'col-lg-12 col-md-12 col-sm-12 col-xs-12 col-md-offset-4')[0]
         .append(h5addr);
     addAdressToCard(); // set the current address
-}
-
-function addObjNamesToTile() {
-    const url = 'http://127.0.0.1:8000/api/managerobject/';
-
-    fetch(url)
-        .then(response => response.json())
-        .then(function(data) {
-            for (var key in data) {
-                if (data.hasOwnProperty(key)) {
-                    if (typeof data[key] === 'object') {
-                        let obInfo = data[key];
-                        let obTile = document.
-                            getElementById(String(obInfo.object_addr))
-                        if (obTile !== null) {
-                            obTile.childNodes[0].title = String(obInfo.nameobj);
-                        }
-                    } else {
-                        console.error(key + ': ' + data[key]);
-                    }
-                }
-            }
-        })
-        .catch(error => console.error(error));
 }
 
 // ##################################################################
@@ -150,8 +212,8 @@ document.body.oncontextmenu = function (e) {
 };
 
 document.onclick = function(e) {
-    console.log('click on:');
-    console.log(e);
+    //console.log('click on:');
+    //console.log(e);
     // open the object card when you click in the event feed
     if (e.target.classList.contains('tableColumnNumChannel') ||
         e.target.classList.contains('tableColumnTimeSys') ||
@@ -171,9 +233,6 @@ document.onclick = function(e) {
     addAdressToCard();
 };
 
-
-window.addEventListener('load', delTopAligh(), false);
-window.addEventListener('load', addIDtoTile(), false);
 window.addEventListener('load', editObjCard(), false);
 window.addEventListener('load', mainPageMod(), false);
 setInterval(() => permanentUpdate(), 500);
