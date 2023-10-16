@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WSP_pageoperator
 // @namespace    https://github.com/pertsevpy/WSP/
-// @version      0.2.3
+// @version      0.3.0
 // @description  Improving the usability of the WSP interface operator's page
 // @author       Pavel P.
 // @license      Unlicense
@@ -33,6 +33,7 @@
 */
 
 const IS_RIGHT_CLICK_ON = false;
+const SERVER_URL = '127.0.0.1:8000';
 
 console.log('Proton script start');
 
@@ -100,7 +101,7 @@ function mainPageMod() {
 }
 
 function addObjNamesToTile() {
-    const url = 'http://127.0.0.1:8000/api/managerobject/';
+    const url = 'http://'+SERVER_URL+'/api/managerobject/';
 
     fetch(url)
         .then(response => response.json())
@@ -146,9 +147,21 @@ function addInfoToTile() {
 
 function addAdressToCard() {
     // adding an address to the header of an object card
-    let ob_info = document.getElementById('information');
-    let ob_info2 = ob_info.getElementsByClassName('col-md-8');
-    let addr = ob_info2[0].textContent;
+    let ob_info_v2 = document.getElementById('information'); // for v23-26
+    let ob_info_v3 = document.getElementsByClassName('row row-margin'); // for v30
+	let ob_info_addr
+    if (ob_info_v2 !== null) {
+    	// if server version v23-26
+    	ob_info_addr = ob_info_v2.getElementsByClassName('col-md-8');
+	} else if (ob_info_v3 !== null) {
+	    // if server version v30
+	    ob_info_addr = ob_info_v3[4].getElementsByClassName('col-md-8');
+	} else {
+		console.warn('Failed to add address to card');
+		return null;
+	}
+
+    let addr = ob_info_addr[0].textContent;
     if (addr.trim() == ',') addr = '_ NO ADRESS _';
     document.getElementById('headAdress').innerHTML = addr;
 }
@@ -187,6 +200,12 @@ function editObjCard() {
     document.getElementsByClassName(
         'col-lg-12 col-md-12 col-sm-12 col-xs-12 col-md-offset-4')[0]
         .append(h5addr);
+
+    // fix the width of the popup window
+    let modal_widow = document.getElementsByClassName('modal-content min-width-1200')
+    if(modal_widow.length != 0) {
+        modal_widow[0].style.minWidth='120%' // the window does not fit into the screen when zooming
+    }
     addAdressToCard(); // set the current address
 }
 
