@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WSP_pageoperator
 // @namespace    https://github.com/pertsevpy/WSP/
-// @version      0.3.0
+// @version      0.3.1
 // @description  Improving the usability of the WSP interface operator's page
 // @author       Pavel P.
 // @license      Unlicense
@@ -36,6 +36,13 @@ const IS_RIGHT_CLICK_ON = false;
 const SERVER_URL = '127.0.0.1:8000';
 
 console.log('Proton script start');
+
+function fd(date) {
+    // format Date to YYYYMMDD
+    return ['year', 'month', 'day'].map(e => new Intl.DateTimeFormat('en', {
+        [e]: 'numeric',
+    }).format(date).padStart(2, '0')).join``;
+}
 
 function mainPageMod() {
     // hide test events - touch to two checkbox
@@ -166,6 +173,169 @@ function addAdressToCard() {
     document.getElementById('headAdress').innerHTML = addr;
 }
 
+function editObjCardInfoEvents() {
+    // Add to the obj card the ability to get information from the report manager
+    let labelObjEvents = document.getElementsByClassName("filter-checkbox");
+    let btnMoreEvents = document.createElement('button');
+    btnMoreEvents.id = "btnMoreEvents";
+    btnMoreEvents.className = "btn btn-default";
+    btnMoreEvents.innerHTML = "Больше событий";
+    btnMoreEvents.style.marginLeft = '10px';
+    btnMoreEvents.style.marginRight = '10px';
+
+    btnMoreEvents.onclick = function () {
+        // Get the object number of the current open card
+        let objNum = document.getElementsByClassName('col-lg-12 col-md-12 col-sm-12 col-xs-12 col-md-offset-4')[0].
+        getElementsByTagName('h5')[0].innerHTML.split('№ ').pop();
+        modal.style.display = "block";
+        modal.className = 'modal fade in';
+        drawTable(objNum);
+        disableButton(btnMoreEvents);
+    };
+
+    labelObjEvents[0].insertAdjacentElement('afterend', btnMoreEvents);
+    // Create a div that will contain all the content of the modal window
+    let modal = document.createElement('div')
+    let modalDialog = document.createElement('div')
+    let modalContent = document.createElement('div');
+    let modalHeader = document.createElement('div');
+    let modalBody = document.createElement('div');
+    let modalBottom = document.createElement('div');
+    // Add the title and contents of the modal window inside this div
+    modalBody.innerHTML = `
+    <h3>События, принятые от объекта</h3>
+    <table id="moreData-table" class="table table-bordered"></table>
+    `;
+    modalContent.appendChild(modalHeader);
+    modalContent.appendChild(modalBody);
+    modalBody.appendChild(modalBottom);
+    modalDialog.appendChild(modalContent);
+    modal.appendChild(modalDialog);
+    // Create a button to close the modal window:
+    // Create a button element
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.classList.add('close');
+    button.setAttribute('data-dismiss', 'modal');
+    button.setAttribute('aria-hidden', 'true');
+    button.innerHTML = '×';
+    // Add a button to the selected element
+    modalHeader.appendChild(button);
+
+    button.addEventListener('click', () => {
+        // Close the modal window
+        modal.classList.remove('in');
+        modal.style.display = 'none';
+        let table = document.getElementById("moreData-table");
+        let rowCount = table.rows.length;
+        for (let i = rowCount - 1; i >= 0; i--) {
+            table.deleteRow(i);
+        }
+    })
+
+    const button2 = document.createElement('button');
+    button2.type = 'button';
+    button2.classList.add('btn');
+    button2.classList.add('btn-default');
+    button2.setAttribute('data-dismiss', 'modal');
+    button2.innerHTML = 'Закрыть';
+
+    modalBottom.appendChild(button2);
+
+    button2.addEventListener('click', () => {
+        // Close the modal window
+        modal.classList.remove('in');
+        modal.style.display = 'none';
+
+        let table = document.getElementById("moreData-table");
+        let rowCount = table.rows.length;
+
+        for (let i = rowCount - 1; i >= 0; i--) {
+            table.deleteRow(i);
+        }
+    })
+
+    // style body
+    modal.className = 'modal fade in';
+    modal.id = 'modalEvents'
+    modalDialog.className = 'modal-dialog modal-dialog-object';
+    modalDialog.style.width = "85%";
+    modalContent.className = 'modal-content';
+    modalHeader.classList.add('modal-header');
+    modalBody.classList.add('modal-body');
+    modalBottom.classList.add('row');
+
+    // Add a modal window to the page
+    document.body.appendChild(modal);
+}
+
+
+function disableButton(obj) {
+    obj.disabled = true;
+    setTimeout(() => enableButton(obj), 60 * 1000)
+}
+
+
+function enableButton(obj) {
+    obj.disabled = false;
+}
+
+
+function drawTable(objNum) {
+    // Get data from the report manager. Draw and fill out a table with events
+    var now = new Date();
+    var now2 = new Date();
+    now2.setDate(now.getDate()-14);
+
+    const urlJournalEvents = `http://${SERVER_URL}/api/journal_events/${fd(now2)}-0-${fd(now)}-86340`;
+
+    fetch(urlJournalEvents)
+        .then(response => response.json())
+        .then(function(data) {
+
+        // Filter by object number. Hide test events
+        data = data.filter((obj) => obj.text_event.indexOf('Тест') === -1)
+        data = data.filter((obj) => obj.num_obj == objNum)
+        // Remove unnecessary columns
+        data.forEach(obj => {
+            delete obj.id_journal_events;
+            delete obj.code_mess;
+            delete obj.operator_name;
+            delete obj.address_obj;
+        });
+        // Creating table
+        let table = document.getElementById("moreData-table");
+        // Creating table headers
+        const headers = Object.keys(data[0]);
+        const headerRow = document.createElement('tr');
+        headers.forEach(headerText => {
+            const header = document.createElement('th');
+            header.style.textAlign = "center";
+            const textNode = document.createTextNode(headerText);
+            header.appendChild(textNode);
+            headerRow.appendChild(header);
+        });
+        table.appendChild(headerRow);
+        // Filling the table with data from an array of objects
+        data.forEach(obj => {
+            const row = document.createElement('tr');
+            row.classList.add('hite-block-bg');
+            row.classList.add('table-bordered');
+            headers.forEach(header => {
+                const cell = document.createElement('td');
+                const textNode = document.createTextNode(obj[header]);
+                cell.appendChild(textNode);
+                row.appendChild(cell);
+            });
+            table.appendChild(row);
+        });
+    })
+        .catch(error => error ? console.error : console.log); //  If there is something to output
+
+}
+
+
+
 function drawingAttention() {
     // аttracting attention in case of problems
     if (document.getElementsByClassName('label label-danger').length > 0) {
@@ -246,6 +416,8 @@ document.onclick = function(e) {
                 let elems = document.getElementById(ob_num);
                 if (elems != null) {
                     elems.click();
+                } else {
+                    console.log(`Card ${ob_num} is not attached or does not exist`);
                 }
             }
     }
@@ -254,4 +426,5 @@ document.onclick = function(e) {
 
 window.addEventListener('load', editObjCard(), false);
 window.addEventListener('load', mainPageMod(), false);
+window.addEventListener('load', editObjCardInfoEvents(), false);
 setInterval(() => permanentUpdate(), 500);
