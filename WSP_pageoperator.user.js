@@ -7,7 +7,9 @@
 // @license      Unlicense
 // @updateURL    https://raw.githubusercontent.com/pertsevpy/WSP/main/WSP_pageoperator.user.js
 // @downloadURL  https://raw.githubusercontent.com/pertsevpy/WSP/main/WSP_pageoperator.user.js
-// @match        http://127.0.0.1:8000/pageoperator
+// @match        *://127.0.0.1:8000/pageoperator
+// @match        *://localhost:8000/pageoperator
+// @match        *://192.168.1.10:8000/pageoperator
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=1.100
 // @grant        none
 // ==/UserScript==
