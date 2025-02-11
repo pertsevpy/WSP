@@ -15,6 +15,7 @@ Minor improvements.
 
 
 # WSP_menu_main_page.user.js
+You must have administrator rights.
 Add a button to the main menu to generate an engineering report - a list of objects with contact information.
 Use with caution, the request takes a noticeable amount of time.
 
