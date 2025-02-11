@@ -21,7 +21,12 @@
    If you found it, but did not receive a link,
    you do not need this code.
 
-   Small improvements for the WSP software we are forced to use
+   Small improvements for the WSP software we are forced to use.
+
+   You must be logged in as an administrator to be able to work with the API.
+   TODO: Do not display the report generation button for other users.
+
+   The script allows you to generate an engineering report from the WSP admin panel
 
    Unlicense
    ...
