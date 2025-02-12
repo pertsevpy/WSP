@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WSP_menu_main_page
 // @namespace    https://github.com/pertsevpy/WSP/
-// @version      0.1.2
+// @version      0.1.3
 // @description  Additional functions for the main menu
 // @author       Pavel P.
 // @license      Unlicense
@@ -41,76 +41,130 @@
    For more information, please refer to <http://unlicense.org/>
 */
 
-const USERNAME = '1'; // the name of the user for which to check the pinning of objects
-// TODO make user selection (drop down list)
 
 (function () {
     'use strict';
 
-    // Adding a button to a page
-    const buttonContainer = document.querySelector('.col-md-10.col-md-offset-1.div_button_home');
+    const panelBody = document.querySelector('.panel-body');
+    const fetchDiv = document.createElement('div');
+    fetchDiv.className = 'col-md-10 col-md-offset-1 div_button_home';
+    panelBody.insertBefore(fetchDiv, panelBody.firstChild);
+
+    // Adding a button to a main page
     const fetchButton = document.createElement('button');
     fetchButton.className = 'btn btn-info btn-lg col-md-12 center-block';
     fetchButton.textContent = 'Список объектов';
-    buttonContainer.insertBefore(fetchButton, buttonContainer.firstChild);
+    fetchDiv.insertBefore(fetchButton, fetchDiv.firstChild);
 
     // Button click handler
     fetchButton.addEventListener('click', () => {
         const SERVER_URL = window.location.host;
 
-        // Getting data from API
-        fetchData(`http://${SERVER_URL}/api/managerobject/`)
-            .then(objectData => {
-            const tableData = [];
-            const promises = [];
+        fetchData(`http://${SERVER_URL}/api/users/`)
+            .then(usersData => {
+            const select = document.createElement('select');
+            select.id = 'user-select';
 
-            //Getting user data
-            const userObjectSetPromise = fetchData(`http://${SERVER_URL}/api/objectsuser/${USERNAME}`)
-            .then(generalData => new Set(generalData));
-
-            // Create a table
-            objectData.forEach(obj => {
-                if (obj.numobj) {
-                    // We receive the owner's data and general data
-                    const ownerPromise = fetchData(`http://${SERVER_URL}/api/owner/${obj.numobj}`)
-                    .then(ownerData => ({
-                        numobj: obj.numobj,
-                        nameobj: obj.nameobj,
-                        fio: ownerData.fio || '',
-                        mobile_phone: ownerData.mobile_phone || '',
-                        mobile_phone2: ownerData.mobile_phone2 || ''
-                    }));
-
-                    const generalPromise = fetchData(`http://${SERVER_URL}/api/general/${obj.numobj}`)
-                    .then(generalData => ({
-                        town_name: generalData.town_name || '',
-                        region_name: generalData.region_name || '',
-                        street_name: generalData.street_name || '',
-                        number_building: generalData.number_building || ''
-                    }));
-
-                    // Combining data
-                    promises.push(Promise.all([ownerPromise, generalPromise]).then(([ownerData, generalData]) => {
-                        return userObjectSetPromise.then(userObjectSet => ({
-                            ...ownerData,
-                            address: `${generalData.town_name}, ${generalData.region_name}, ${generalData.street_name}, ${generalData.number_building}`,
-                            user: userObjectSet.has(obj.numobj.toString()) ? '1' : ''
-                        }));
-                    }));
-                }
+            usersData.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.login;
+                option.textContent = user.login;
+                select.appendChild(option);
             });
 
-            // Waiting for all requests to complete
-            return Promise.all(promises).then(results => {
-                tableData.push(...results);
-                tableData.sort((a, b) => a.numobj - b.numobj);
-                showModal(tableData);
+            const modalContent = document.createElement('div');
+            modalContent.appendChild(document.createElement('p')).textContent = 'Выберите пользователя:';
+            modalContent.appendChild(select);
+
+            const confirmButton = document.createElement('button');
+            confirmButton.id = 'confirm-button';
+            confirmButton.textContent = 'Подтвердить';
+            modalContent.appendChild(confirmButton);
+
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.backgroundColor = 'white';
+            modal.style.padding = '20px';
+            modal.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            confirmButton.addEventListener('click', () => {
+                const userSelect = document.getElementById('user-select');
+                const selectedUsername = userSelect.value;
+
+                if (!selectedUsername) {
+                    alert('Пожалуйста, выберите пользователя.');
+                    return;
+                }
+                document.body.removeChild(modal); // Delete the modal window with the user's choice for the report
+
+
+                const SERVER_URL = window.location.host;
+
+                // Getting data from API
+                fetchData(`http://${SERVER_URL}/api/managerobject/`)
+                    .then(objectData => {
+                    const tableData = [];
+                    const promises = [];
+
+                    //Getting user data
+                    const userObjectSetPromise = fetchData(`http://${SERVER_URL}/api/objectsuser/${selectedUsername}`)
+                    .then(generalData => new Set(generalData));
+
+                    // Create a table
+                    objectData.forEach(obj => {
+                        if (obj.numobj) {
+                            // We receive the owner's data and general data
+                            const ownerPromise = fetchData(`http://${SERVER_URL}/api/owner/${obj.numobj}`)
+                            .then(ownerData => ({
+                                numobj: obj.numobj,
+                                nameobj: obj.nameobj,
+                                fio: ownerData.fio || '',
+                                mobile_phone: ownerData.mobile_phone || '',
+                                mobile_phone2: ownerData.mobile_phone2 || ''
+                            }));
+
+                            const generalPromise = fetchData(`http://${SERVER_URL}/api/general/${obj.numobj}`)
+                            .then(generalData => ({
+                                town_name: generalData.town_name || '',
+                                region_name: generalData.region_name || '',
+                                street_name: generalData.street_name || '',
+                                number_building: generalData.number_building || ''
+                            }));
+
+                            // Combining data
+                            promises.push(Promise.all([ownerPromise, generalPromise]).then(([ownerData, generalData]) => {
+                                return userObjectSetPromise.then(userObjectSet => ({
+                                    ...ownerData,
+                                    address: `${generalData.town_name}, ${generalData.region_name}, ${generalData.street_name}, ${generalData.number_building}`,
+                                    user: userObjectSet.has(obj.numobj.toString()) ? '1' : ''
+                                }));
+                            }));
+                        }
+                    });
+
+                    // Waiting for all requests to complete
+                    return Promise.all(promises).then(results => {
+                        tableData.push(...results);
+                        tableData.sort((a, b) => a.numobj - b.numobj);
+                        showModal(tableData);
+                    });
+                })
+                    .catch(error => {
+                    console.error('Error while receiving data:', error);
+                });
+
             });
         })
             .catch(error => {
-            console.error('Error while receiving data:', error);
+            console.error('Error when getting the list of users:', error);
         });
     });
+
 
     // Function to execute the request
     function fetchData(url) {
@@ -141,7 +195,6 @@ const USERNAME = '1'; // the name of the user for which to check the pinning of 
         const closeButton = document.createElement('button');
         closeButton.textContent = 'Закрыть';
         closeButton.style.float = 'right';
-        closeButton.classList.add('close');
         closeButton.setAttribute('data-dismiss', 'modal');
         closeButton.setAttribute('aria-hidden', 'true');
 
@@ -183,7 +236,7 @@ const USERNAME = '1'; // the name of the user for which to check the pinning of 
             <tr>
                 <th>N объекта</th>
                 <th>Наименование</th>
-                <th>ФИО</th>
+                <th>ФИО собственника</th>
                 <th>Телефон 1</th>
                 <th>Телефон 2</th>
                 <th>Адрес</th>
@@ -202,9 +255,10 @@ const USERNAME = '1'; // the name of the user for which to check the pinning of 
                 </tr>`).join('')}
         </tbody></table>`;
 
+        const closeButtonTop = createCloseButton(modal);
         const closeButton = createCloseButton(modal);
-        modalContent.insertBefore(closeButton, modalContent.firstChild);
-        // modalContent.appendChild(closeButton);
+        modalContent.insertBefore(closeButtonTop, modalContent.firstChild);
+        modalContent.appendChild(closeButton);
 
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
