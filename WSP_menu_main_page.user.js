@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         WSP_menu_main_page
+// @name         WSP_menu_main_page_TETS
 // @namespace    https://github.com/pertsevpy/WSP/
 // @version      0.1.3
 // @description  Additional functions for the main menu
@@ -41,6 +41,7 @@
    For more information, please refer to <http://unlicense.org/>
 */
 
+const SERVER_URL = window.location.origin;
 
 (function () {
     'use strict';
@@ -52,15 +53,14 @@
 
     // Adding a button to a main page
     const fetchButton = document.createElement('button');
-    fetchButton.className = 'btn btn-info btn-lg col-md-12 center-block';
+    fetchButton.className = 'btn btn-success btn-lg col-md-12 center-block';
+    fetchButton.style.width = '100%';
     fetchButton.textContent = 'Список объектов';
     fetchDiv.insertBefore(fetchButton, fetchDiv.firstChild);
 
     // Button click handler
     fetchButton.addEventListener('click', () => {
-        const SERVER_URL = window.location.host;
-
-        fetchData(`http://${SERVER_URL}/api/users/`)
+        fetchData(`${SERVER_URL}/api/users/`)
             .then(usersData => {
             const select = document.createElement('select');
             select.id = 'user-select';
@@ -82,6 +82,7 @@
             modalContent.appendChild(confirmButton);
 
             const modal = document.createElement('div');
+            //modal.className = 'modal fade in';
             modal.style.position = 'fixed';
             modal.style.top = '50%';
             modal.style.left = '50%';
@@ -102,24 +103,21 @@
                 }
                 document.body.removeChild(modal); // Delete the modal window with the user's choice for the report
 
-
-                const SERVER_URL = window.location.host;
-
                 // Getting data from API
-                fetchData(`http://${SERVER_URL}/api/managerobject/`)
+                fetchData(`${SERVER_URL}/api/managerobject/`)
                     .then(objectData => {
                     const tableData = [];
                     const promises = [];
 
                     //Getting user data
-                    const userObjectSetPromise = fetchData(`http://${SERVER_URL}/api/objectsuser/${selectedUsername}`)
+                    const userObjectSetPromise = fetchData(`${SERVER_URL}/api/objectsuser/${selectedUsername}`)
                     .then(generalData => new Set(generalData));
 
                     // Create a table
                     objectData.forEach(obj => {
                         if (obj.numobj) {
                             // We receive the owner's data and general data
-                            const ownerPromise = fetchData(`http://${SERVER_URL}/api/owner/${obj.numobj}`)
+                            const ownerPromise = fetchData(`${SERVER_URL}/api/owner/${obj.numobj}`)
                             .then(ownerData => ({
                                 numobj: obj.numobj,
                                 nameobj: obj.nameobj,
@@ -128,7 +126,7 @@
                                 mobile_phone2: ownerData.mobile_phone2 || ''
                             }));
 
-                            const generalPromise = fetchData(`http://${SERVER_URL}/api/general/${obj.numobj}`)
+                            const generalPromise = fetchData(`${SERVER_URL}/api/general/${obj.numobj}`)
                             .then(generalData => ({
                                 town_name: generalData.town_name || '',
                                 region_name: generalData.region_name || '',
@@ -190,24 +188,6 @@
         });
     }
 
-    // Function to create a close button
-    function createCloseButton(modal) {
-        const closeButton = document.createElement('button');
-        closeButton.textContent = 'Закрыть';
-        closeButton.style.float = 'right';
-        closeButton.setAttribute('data-dismiss', 'modal');
-        closeButton.setAttribute('aria-hidden', 'true');
-
-        closeButton.addEventListener('click', () => {
-            modal.setAttribute('aria-hidden', 'true');
-            modal.classList.remove('in');
-            modal.style.display = 'none';
-            document.body.removeChild(modal);
-        });
-
-        return closeButton;
-    }
-
     // Function to create and display a modal window
     function showModal(data) {
         const modal = document.createElement('div');
@@ -254,6 +234,39 @@
                     <td>${item.user}</td>
                 </tr>`).join('')}
         </tbody></table>`;
+
+        // Function to create a close button
+        function createCloseButton(modal) {
+            const closeButton = document.createElement('button');
+            closeButton.textContent = 'Закрыть';
+            closeButton.style.float = 'right';
+            closeButton.setAttribute('data-dismiss', 'modal');
+            closeButton.setAttribute('aria-hidden', 'true');
+
+            closeButton.addEventListener('click', () => {
+                modal.setAttribute('aria-hidden', 'true');
+                modal.classList.remove('in');
+                modal.style.display = 'none';
+                document.body.removeChild(modal);
+            });
+
+            return closeButton;
+        }
+
+        // The function of closing
+        const closeModal = () => {
+            document.body.removeChild(modal);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+
+        // The ESC key handler
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
 
         const closeButtonTop = createCloseButton(modal);
         const closeButton = createCloseButton(modal);
