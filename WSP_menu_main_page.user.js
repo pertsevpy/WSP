@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         WSP_menu_main_page_TETS
+// @name         WSP_menu_main_page
 // @namespace    https://github.com/pertsevpy/WSP/
-// @version      0.1.3
+// @version      0.1.4
 // @description  Additional functions for the main menu
 // @author       Pavel P.
 // @license      Unlicense
@@ -62,109 +62,102 @@ const SERVER_URL = window.location.origin;
     fetchButton.addEventListener('click', () => {
         fetchData(`${SERVER_URL}/api/users/`)
             .then(usersData => {
-            const select = document.createElement('select');
-            select.id = 'user-select';
+                const select = document.createElement('select');
+                select.id = 'user-select';
 
-            usersData.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.login;
-                option.textContent = user.login;
-                select.appendChild(option);
-            });
-
-            const modalContent = document.createElement('div');
-            modalContent.appendChild(document.createElement('p')).textContent = 'Выберите пользователя:';
-            modalContent.appendChild(select);
-
-            const confirmButton = document.createElement('button');
-            confirmButton.id = 'confirm-button';
-            confirmButton.textContent = 'Подтвердить';
-            modalContent.appendChild(confirmButton);
-
-            const modal = document.createElement('div');
-            //modal.className = 'modal fade in';
-            modal.style.position = 'fixed';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.backgroundColor = 'white';
-            modal.style.padding = '20px';
-            modal.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-            modal.appendChild(modalContent);
-            document.body.appendChild(modal);
-
-            confirmButton.addEventListener('click', () => {
-                const userSelect = document.getElementById('user-select');
-                const selectedUsername = userSelect.value;
-
-                if (!selectedUsername) {
-                    alert('Пожалуйста, выберите пользователя.');
-                    return;
-                }
-                document.body.removeChild(modal); // Delete the modal window with the user's choice for the report
-
-                // Getting data from API
-                fetchData(`${SERVER_URL}/api/managerobject/`)
-                    .then(objectData => {
-                    const tableData = [];
-                    const promises = [];
-
-                    //Getting user data
-                    const userObjectSetPromise = fetchData(`${SERVER_URL}/api/objectsuser/${selectedUsername}`)
-                    .then(generalData => new Set(generalData));
-
-                    // Create a table
-                    objectData.forEach(obj => {
-                        if (obj.numobj) {
-                            // We receive the owner's data and general data
-                            const ownerPromise = fetchData(`${SERVER_URL}/api/owner/${obj.numobj}`)
-                            .then(ownerData => ({
-                                numobj: obj.numobj,
-                                nameobj: obj.nameobj,
-                                fio: ownerData.fio || '',
-                                mobile_phone: ownerData.mobile_phone || '',
-                                mobile_phone2: ownerData.mobile_phone2 || ''
-                            }));
-
-                            const generalPromise = fetchData(`${SERVER_URL}/api/general/${obj.numobj}`)
-                            .then(generalData => ({
-                                town_name: generalData.town_name || '',
-                                region_name: generalData.region_name || '',
-                                street_name: generalData.street_name || '',
-                                number_building: generalData.number_building || ''
-                            }));
-
-                            // Combining data
-                            promises.push(Promise.all([ownerPromise, generalPromise]).then(([ownerData, generalData]) => {
-                                return userObjectSetPromise.then(userObjectSet => ({
-                                    ...ownerData,
-                                    address: `${generalData.town_name}, ${generalData.region_name}, ${generalData.street_name}, ${generalData.number_building}`,
-                                    user: userObjectSet.has(obj.numobj.toString()) ? '1' : ''
-                                }));
-                            }));
-                        }
-                    });
-
-                    // Waiting for all requests to complete
-                    return Promise.all(promises).then(results => {
-                        tableData.push(...results);
-                        tableData.sort((a, b) => a.numobj - b.numobj);
-                        showModal(tableData);
-                    });
-                })
-                    .catch(error => {
-                    console.error('Error while receiving data:', error);
+                usersData.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.login;
+                    option.textContent = user.login;
+                    select.appendChild(option);
                 });
 
-            });
-        })
+                const modalContent = document.createElement('div');
+                modalContent.appendChild(document.createElement('p')).textContent = 'Выберите пользователя:';
+                modalContent.appendChild(select);
+
+                const confirmButton = document.createElement('button');
+                confirmButton.id = 'confirm-button';
+                confirmButton.textContent = 'Подтвердить';
+                modalContent.appendChild(confirmButton);
+
+                const modal = document.createElement('div');
+                modal.style.position = 'fixed';
+                modal.style.top = '50%';
+                modal.style.left = '50%';
+                modal.style.transform = 'translate(-50%, -50%)';
+                modal.style.backgroundColor = 'white';
+                modal.style.padding = '20px';
+                modal.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                modal.appendChild(modalContent);
+                document.body.appendChild(modal);
+
+                confirmButton.addEventListener('click', () => {
+                    const userSelect = document.getElementById('user-select');
+                    const selectedUsername = userSelect.value;
+
+                    if (!selectedUsername) {
+                        alert('Пожалуйста, выберите пользователя.');
+                        return;
+                    }
+                    document.body.removeChild(modal);
+
+                    fetchData(`${SERVER_URL}/api/managerobject/`)
+                        .then(objectData => {
+                            const tableData = [];
+                            const promises = [];
+
+                            const userObjectSetPromise = fetchData(`${SERVER_URL}/api/objectsuser/${selectedUsername}`)
+                                .then(generalData => new Set(generalData));
+
+                            objectData.forEach(obj => {
+                                if (obj.numobj) {
+                                    const ownerPromise = fetchData(`${SERVER_URL}/api/owner/${obj.numobj}`)
+                                        .then(ownerData => ({
+                                            numobj: obj.numobj,
+                                            nameobj: obj.nameobj,
+                                            fio: ownerData.fio || '',
+                                            mobile_phone: ownerData.mobile_phone || '',
+                                            mobile_phone2: ownerData.mobile_phone2 || ''
+                                        }));
+
+                                    const generalPromise = fetchData(`${SERVER_URL}/api/general/${obj.numobj}`)
+                                        .then(generalData => ({
+                                            town_name: generalData.town_name || '',
+                                            region_name: generalData.region_name || '',
+                                            street_name: generalData.street_name || '',
+                                            number_building: generalData.number_building || ''
+                                        }));
+
+                                    promises.push(Promise.all([ownerPromise, generalPromise, userObjectSetPromise]).then(([ownerData, generalData, userObjectSet]) => {
+                                        const isAssigned = userObjectSet.has(obj.numobj.toString());
+                                        if (!isAssigned) return null; // Пропускаем незакрепленные объекты
+
+                                        return {
+                                            ...ownerData,
+                                            address: `${generalData.town_name}, ${generalData.region_name}, ${generalData.street_name}, ${generalData.number_building}`,
+                                            user: selectedUsername // Используем имя оператора вместо "1"
+                                        };
+                                    }));
+                                }
+                            });
+
+                            return Promise.all(promises).then(results => {
+                                const filteredResults = results.filter(item => item !== null);
+                                filteredResults.sort((a, b) => a.numobj - b.numobj);
+                                showModal(filteredResults);
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error while receiving data:', error);
+                        });
+                });
+            })
             .catch(error => {
-            console.error('Error when getting the list of users:', error);
-        });
+                console.error('Error when getting the list of users:', error);
+            });
     });
 
-
-    // Function to execute the request
     function fetchData(url) {
         return new Promise((resolve, reject) => {
             GM.xmlHttpRequest({
@@ -188,7 +181,6 @@ const SERVER_URL = window.location.origin;
         });
     }
 
-    // Function to create and display a modal window
     function showModal(data) {
         const modal = document.createElement('div');
         modal.className = 'modal fade in';
@@ -209,7 +201,6 @@ const SERVER_URL = window.location.origin;
         modalContent.style.width = '80%';
         modalContent.style.maxHeight = '80%';
         modalContent.style.overflowY = 'auto';
-
 
         modalContent.innerHTML += `<h5>Данные объектов</h5>`;
         modalContent.innerHTML += `<table class='table'><thead>
@@ -235,7 +226,6 @@ const SERVER_URL = window.location.origin;
                 </tr>`).join('')}
         </tbody></table>`;
 
-        // Function to create a close button
         function createCloseButton(modal) {
             const closeButton = document.createElement('button');
             closeButton.textContent = 'Закрыть';
@@ -253,13 +243,11 @@ const SERVER_URL = window.location.origin;
             return closeButton;
         }
 
-        // The function of closing
         const closeModal = () => {
             document.body.removeChild(modal);
             document.removeEventListener('keydown', handleKeyDown);
         };
 
-        // The ESC key handler
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
                 closeModal();
