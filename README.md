@@ -12,7 +12,7 @@ UI improvements for the WSP operator: font, tiles, accordion, ribbon click, tool
 
 
 The following scripts
-##DEPRECATED!
+## DEPRECATED!
 Left for compatibility with servers of version below 30.*:
 
 ### WSP_pageoperator.user.js
