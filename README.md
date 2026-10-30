@@ -16,6 +16,9 @@ The “More events” button in the WSP object card (requesting the log for 14 d
 ### WSP_sync_object_names.user.js
 Synchronization of object names: nameobj from managerobject to full_name via
 
+### WSP_user_sync.user.js
+Adds a button to synchronize objects for users on the “Access Manager” page. Updated version of WSP_pagemanageraccess.user.js for WSP V37.*
+
 The following scripts
 ## DEPRECATED!
 Left for compatibility with servers of version below 30.*:
