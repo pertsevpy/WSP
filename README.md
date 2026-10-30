@@ -14,13 +14,13 @@ UI improvements for the WSP operator: font, tiles, accordion, ribbon click, tool
 The “More events” button in the WSP object card (requesting the log for 14 days). This part of the functions was moved from the old version of the WSP_pageoperator
 
 ### WSP_sync_object_names.user.js
-Synchronization of object names: nameobj from managerobject to full_name via
+Synchronization of object names: nameobj from managerobject to full_name via WSP V37.*.
 
 ### WSP_user_sync.user.js
 Adds a button to synchronize objects for users on the “Access Manager” page. Updated version of WSP_pagemanageraccess.user.js for WSP V37.*
 
 The following scripts
-## DEPRECATED!
+## ⚠️ DEPRECATED!
 Left for compatibility with servers of version below 30.*:
 
 ### WSP_pageoperator.user.js
