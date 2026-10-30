@@ -10,6 +10,8 @@ Use Tampermonkey or a similar plugin for your browser.
 ### WSP_pageoperator_ui.user.js
 UI improvements for the WSP operator: font, tiles, accordion, ribbon click, tooltip, connection indicator, tab memory, one‑time activation of hiding checkboxes. WSP_pageoperator will now be divided into several scripts, and the UI will be separated.
 
+### WSP_sync_object_names.user.js
+Synchronization of object names: nameobj from managerobject to full_name via
 
 The following scripts
 ## DEPRECATED!
