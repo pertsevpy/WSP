@@ -8,7 +8,7 @@ Use Tampermonkey or a similar plugin for your browser.
 ## Verified on WSP V37.0.0.25
 
 ### WSP_pageoperator_ui.user.js
-UI improvements for the WSP operator: font, tiles, accordion, ribbon click, tooltip, connection indicator, tab memory, one‑time activation of hiding checkboxes.
+UI improvements for the WSP operator: font, tiles, accordion, ribbon click, tooltip, connection indicator, tab memory, one‑time activation of hiding checkboxes. WSP_pageoperator will now be divided into several scripts, and the UI will be separated.
 
 
 The following scripts
