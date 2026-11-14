@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WSP_user_sync
 // @namespace    https://github.com/pertsevpy/WSP/
-// @version      2.0.0
+// @version      2.2.0
 // @description  Добавляет кнопку синхронизации в первый div.col-lg-12 на странице "Менеджер доступа". обновленная версия WSP_pagemanageraccess.user.js для V37.*
 // @author       Pavel P.
 // @license      Unlicense
@@ -18,7 +18,7 @@
     'use strict';
 
     const FIRST_USER  = '1';
-    const usernames   = ['voroninanm', 'yakuncevaeg', 'lykovanm', 'chekanovavn', 'pazhitnovaov'];
+    const usernames   = ['user1', 'user2', 'user3', 'user4', 'user5'];
     const BASE_URL    = 'http://192.168.1.100:8000';
     const BUTTON_ID   = 'sync-users-button';
 
@@ -43,25 +43,88 @@
         });
     }
 
+    // Запрос текущего списка объектов пользователя
+    async function getObjects(username) {
+        const data = await makeRequest('GET', `${BASE_URL}/api/objectsuser/${encodeURIComponent(username)}`);
+        if (!Array.isArray(data)) throw new Error(`Для пользователя ${username} получены данные не в виде массива`);
+        return data.map(String);
+    }
+
+    // Отправка списка объектов (PUT переключает состояние каждого объекта для пользователя)
+    async function putObjects(username, listNumobj) {
+        return makeRequest('PUT', `${BASE_URL}/api/objects/`, {
+            user: username,
+            listNumobj
+        });
+    }
+
+    // «Очистка»: запрашиваем текущий список и отправляем его же обратно,
+    // чтобы сбросить/переключить состояние каждого объекта для пользователя.
+    async function clearUserState(username) {
+        const current = await getObjects(username);
+        if (current.length === 0) {
+            return { username, cleared: 0, note: 'список пуст' };
+        }
+        await putObjects(username, current);
+        return { username, cleared: current.length };
+    }
+
     async function syncUsers(event) {
         const btn = event.target;
         btn.disabled = true;
         const originalText = btn.textContent;
         btn.textContent = 'Синхронизация...';
+
+        const log = [];
         try {
-            const objects = await makeRequest('GET', `${BASE_URL}/api/objectsuser/${FIRST_USER}`);
-            if (!Array.isArray(objects)) throw new Error('Полученные данные не являются массивом');
+            // 1) Эталонный список объектов первого пользователя
+            const objects = await getObjects(FIRST_USER);
+            log.push(`Эталон (${FIRST_USER}): ${objects.length} объектов`);
+            if (objects.length === 0) {
+                throw new Error(`У пользователя ${FIRST_USER} нет объектов для синхронизации`);
+            }
 
-            const results = await Promise.allSettled(usernames.map(u =>
-                makeRequest('PUT', `${BASE_URL}/api/objects/`, { user: u, listNumobj: objects })
-            ));
-            const ok   = results.filter(r => r.status === 'fulfilled').length;
-            const fail = results.filter(r => r.status === 'rejected').length;
+            // 2) Очистка состояния у каждого пользователя из usernames
+            btn.textContent = 'Очистка...';
+            const clearResults = await Promise.allSettled(
+                usernames.map(u => clearUserState(u))
+            );
+            clearResults.forEach((r, i) => {
+                if (r.status === 'fulfilled') {
+                    log.push(`Очистка ${usernames[i]}: OK (${r.value.cleared} об.)`);
+                } else {
+                    log.push(`Очистка ${usernames[i]}: ОШИБКА — ${r.reason.message}`);
+                    console.error(`Ошибка очистки для ${usernames[i]}:`, r.reason);
+                }
+            });
 
-            if (fail === 0) alert(`Синхронизация завершена успешно для всех ${ok} пользователей`);
-            else {
-                alert(`Синхронизация завершена с ошибками:\nУспешно: ${ok}\nОшибок: ${fail}\nПодробности в консоли`);
-                results.forEach((r, i) => { if (r.status === 'rejected') console.error(`Ошибка для ${usernames[i]}:`, r.reason); });
+            // 3) Синхронизация с первым пользователем
+            btn.textContent = 'Синхронизация...';
+            const syncResults = await Promise.allSettled(
+                usernames.map(u => putObjects(u, objects))
+            );
+            const ok   = syncResults.filter(r => r.status === 'fulfilled').length;
+            const fail = syncResults.filter(r => r.status === 'rejected').length;
+            syncResults.forEach((r, i) => {
+                if (r.status === 'rejected') {
+                    console.error(`Ошибка синхронизации для ${usernames[i]}:`, r.reason);
+                }
+            });
+
+            console.group('Синхронизация пользователей');
+            log.forEach(l => console.log(l));
+            console.groupEnd();
+
+            if (fail === 0) {
+                alert(
+                    `Синхронизация завершена успешно для всех ${ok} пользователей.\n` +
+                    `Эталон: ${objects.length} объектов.`
+                );
+            } else {
+                alert(
+                    `Синхронизация завершена с ошибками:\n` +
+                    `Успешно: ${ok}\nОшибок: ${fail}\nПодробности в консоли`
+                );
             }
         } catch (e) {
             console.error('Ошибка синхронизации:', e);
